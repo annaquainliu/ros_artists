@@ -1,0 +1,16 @@
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+
+# Ignore other binary files
+*.pyo
+*.pyd
+*.so
+
+# Ignore virtual environment with libraries
+.venv/
+
+.DS_Store
+
+*.png
+*.jpeg

@@ -1,0 +1,53 @@
+File Descriptions
+    turtlebot_artist.py: Contains multiple classes that represent different
+                        steps in the process, from image processing to
+                        controlling the robot's movement along the planned path.
+    Processor.py: Defines a class responsible for processing the input image.
+    Planner.py: Defines a class responsible for creating a path plan for the
+                robot to follow.
+    main.py: Used to invoke the functionality of other classes for tasks like
+            visualizing image processing steps and graphs, without requiring a
+            connection to the robot.
+    
+    Note: The turtlebot_artist.py file contains multiple classes, including
+        the Planner and Processor classes, which are defined in the Planner.py
+        and Processor.py files, respectively. Due to issues with how the
+        compute environment hosting ROS interprets the use of different
+        libraries, the classes are combined into a single file to simplify
+        the process and minimize debugging time. Additionally,
+        turtlebot_artist.py is executed only when the robot is tasked with
+        traversing the path. Other tasks, such as visualizing image processing
+        steps and graphs, can be executed by running the main.py file.
+
+Used Libraries and How to Install
+    numpy: pip install numpy
+    OpenCV: pip install opencv-python
+    Matplotlib: pip install matplotlib
+    scikit-image: pip install scikit-image
+
+Command References
+    python turtlebot_artist.py: This command initiates image processing,
+                                generates the path plan, and controls the
+                                robot to traverse the path (used for testing with the robot).
+    python3 main.py: This command initiates image processing, generates the
+                    path plan, and visualizes the subsequent procedures (semi-test without the robot).
+
+    Note: When running the command to test with the robot, ensure that:
+        - The TurtleBot is powered on.
+        - You have SSH-ed into the computer that has ROS installed and is connected to the TurtleBot.
+        - The turtlebot_artist.py file is available in the environment of the computer you've SSH-ed into.
+
+Other Note and Resources
+    How to Activate Python VM to download python libraries before coding
+        - python3 -m venv .venv: create VM
+        - source .venv/bin/activate: activate VM
+
+    Image Processing
+        Gaussian Blurrred
+            Sigma Explain
+                - https://stackoverflow.com/questions/23007064/effect-of-variance-sigma-at-gaussian-smoothing
+            Kernal Size Explain
+                - Smaller kernels (e.g., 3x3): Capture fine details and are computationally efficient.
+                - Larger kernels (e.g., 5x5 or 7x7): Capture broader features and more context but are computationally more expensive.
+            Others
+                - https://learnopencv.com/edge-detection-using-opencv/
