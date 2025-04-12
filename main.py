@@ -10,23 +10,19 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from skimage.metrics import structural_similarity as ssim
+import sys
 
 def main(args):
     
-    P = Processor()
+    # Load the image (e.g., squirrel.png)
+    img = cv2.imread('photos/AngularSquirrel2.png')
     
-    return 
+    P = Processor(img, rows=1, cols=1)
+    testingData = []
+    P.process_image(testingData=testingData)
 
-def show_img(img: np.ndarray) -> None:
-    """
-    Display the given image using OpenCV.
-
-    Args:
-    - img (np.ndarray): The image to display.
-    """
-    cv2.imshow(f'Image (Press 0 to Exit)', img)
-    cv2.waitKey(0)  # Wait for a key press to close the window
-    cv2.destroyAllWindows()
-
+    for sub_img in testingData:
+        P.show_img(sub_img)
+        
 if __name__ == '__main__':
-    main() 
+    main(sys.argv) 
