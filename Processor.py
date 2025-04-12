@@ -110,7 +110,7 @@ class Processor:
         
         # Assumption: # thread = # sub-image chunks
         for i in range(len(subimage_range_list)):
-            thread = threading.Thread(target=self.process_chunk,args=[subimage_range_list[i], self.__planner, self.__image, testingData])
+            thread = threading.Thread(target=self.process_chunk,args=[subimage_range_list[i], testingData])
             threads.append(thread)
         
         # Start threads
@@ -233,10 +233,8 @@ class Processor:
             
         return approx_contours
     
-    def process_chunk(self, chunk_image_range : 
-                                Tuple[Tuple[int, int], Tuple[int, int]], 
-                            planner: Planner, 
-                            image: np.ndarray,
+    def process_chunk(self, chunk_image_range 
+                            : Tuple[Tuple[int, int], Tuple[int, int]], 
                             testingData = None):
         '''
             Function ran by a thread spawned from the main Processor thread
@@ -264,9 +262,9 @@ class Processor:
         
         # For the specified chunk between the columns [left, right] 
         # and the rows [top, bottom] create an image chunk
-        image_chunk = image[top : bottom + 1, left : right + 1, :]
+        image_chunk = self.__image[top : bottom + 1, left : right + 1, :]
         
-        print(f"image dimensions: {image.shape}")
+        print(f"image dimensions: {self.__image.shape}")
         print(f"image chunk shape: {image_chunk.shape}")
         
         # Convert the image to grayscale
@@ -298,7 +296,7 @@ class Processor:
         path = Processor.PathPlan(approx_contours, np.array([[left, top]]))
         
         if testingData is None:
-            planner.AddTaskToQueue(path)
+            self.planner.AddTaskToQueue(path)
         else:
             # Add the path to the queue
             canvas = Processor.DrawPath(image_chunk, path)

@@ -517,6 +517,7 @@ class Artist:
         # Print out control estimated coordinates and current odometer pose for debugging
         print("Control estimated coords:", coords_final)
         print("Odometer pose:", self.listener.pose)
+        
 ####################################################################################################################################
 if __name__ == '__main__':
     """
