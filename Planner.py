@@ -1,6 +1,7 @@
 
 
 '''
+    Essentially act as the distributor that gives task to bots
 
     Delegates list of coordinates of one chunk of an image to an artist.
     
@@ -23,14 +24,15 @@ class Planner:
         # List of pid for each artist; use for communicating between machines
         self.__artists = []
         
-    def AddTaskToQueue():
+    def AddTaskToQueue(self, path):
         '''
             Add pre-processed list of coordinates to queue
         '''
-        raise Exception("Not Yet Implemented")
+        queue.put(path)
     
-    def DistributeTask():
+    def DistributeTask(self, ):
         '''
             Pick 
         '''
+        
         raise Exception("Not Yet Implemented")
