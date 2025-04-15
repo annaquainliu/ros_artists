@@ -26,7 +26,8 @@ class Processor:
 
     def __init__(self, image: np.ndarray, rows=4, cols=5):
         self.__image = image
-        self.__planner = Planner()
+        h, w, _ = self.__image.shape
+        self.__planner = Planner(w, h)
         self.__num_rows = rows
         self.__num_cols = cols
         self.__num_threads = self.__num_rows * self.__num_cols

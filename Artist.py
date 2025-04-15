@@ -6,7 +6,7 @@
 '''
 
 from threading import Thread, Lock, Condition
-from socket import socket
+import socket
 import rospy
 from geometry_msgs.msg import Twist
 import numpy as np
@@ -57,6 +57,11 @@ class Artist:
         self.consumer = Thread(target=self.execute_tasks, args=())
         self.consumer.start()
         
+        intputVal = raw_input("Wiat for input: ")
+        print("Raw input is: ", intputVal)
+        if intputVal == "c":
+            sys.exit()
+        
         
     
     def receive_messages(self):
@@ -65,10 +70,14 @@ class Artist:
             continuously listens for tasks and pushes each task onto its taskList.
             
         '''
-        PLANNER_IP = "TODO"
-        PLANNER_PORT = "TODO"
+        PLANNER_IP = "10.5.13.238"
+        PLANNER_PORT = 22
+        print("ENTER receive tasks")
         
-        with socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    
+        
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
             connection = s.connect((PLANNER_IP, PLANNER_PORT))
             with connection:
@@ -81,12 +90,8 @@ class Artist:
                     dtype = np.dtype(dtype_str)
 
                     # Receive the data
-                    data = b''
-                    while True:
-                        chunk = connection.recv(4096)
-                        if not chunk:
-                            break
-                        data += chunk
+                    data = connection.recv(4096)
+                    print("Artist::Receive data from Planner")
                     
                     # Create numpy array from received data
                     task = np.frombuffer(data, dtype=dtype).reshape(shape)
@@ -95,8 +100,11 @@ class Artist:
                     with self.taskMutex:
                         self.taskList.append(task)
                         self.dataAvailable.notify()
-                    print(f"Data recieved through socket: {data}")
-        return
+                    print("Data recieved through socket: ", data)
+        except:
+            pass
+        finally:
+            s.close()
     
     def execute_tasks(self):
         '''
@@ -104,6 +112,7 @@ class Artist:
             the closest task to its current position.
             
         '''
+        print("ENTER execute tasks")
         with self.taskMutex:
             
             while (len(self.taskList) == 0):
@@ -268,8 +277,11 @@ class Artist:
             
 
 def main(args):
-    init_coord = args[1]
-    artist = Artist(init_coord)
+    init_x = args[1]
+    init_y = args[2]
+    
+    
+    artist = Artist((init_x, init_y))
 
 if __name__ == '__main__':
     main(sys.argv)

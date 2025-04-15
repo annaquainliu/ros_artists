@@ -14,14 +14,14 @@
 '''
 import queue
 from threading import Lock, Condition
-from socket import socket
+import socket
 import threading
 
 class Planner:
     
     
     def __init__(self, img_w, img_h):
-        self.__num_artists = 2
+        self.__num_artists = 1
         self.__artist_x_boundaries = []
         
         # Each boundary represents the [start_x, end_x)
@@ -29,11 +29,13 @@ class Planner:
             self.__artist_x_boundaries.append((i * (img_w // self.__num_artists), (i + 1) * (img_w // self.__num_artists)))
             
         ARTIST_IP = "0.0.0.0"   # accpet connetion from any IP
-        ARTIST_PORT = 65432     # need to used some non-priviledge port
+        ARTIST_PORT = 22     # need to used some non-priviledge port
         
-        self.sever_socket = socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("Before Planner Socket Bind")
+        self.sever_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sever_socket.bind((ARTIST_IP, ARTIST_PORT))
         self.sever_socket.listen(self.__num_artists)
+        print("After Planner Socket Bind")
         
         # make sure to secure connection with artist
         self.connections = [self.sever_socket.accept() for _ in range(self.__num_artists)]
@@ -54,6 +56,7 @@ class Planner:
             Add pre-processed list of coordinates to queue
         '''
         queue.put(path)
+        print("Planner::Add task to queue")
         
         with self.distributeTaskLock:
             self.dataAvailable.notify()
@@ -77,6 +80,7 @@ class Planner:
                     if (first_x_coordinate >= self.__artist_x_boundaries[i][0] 
                         and first_x_coordinate < self.__artist_x_boundaries[i][1]):
                         # Send robot i the path
+                        print("Planner::Send task to artist")
                         self.send_messages(task_to_distribute, i)
         except Exception:
             print("TODO")

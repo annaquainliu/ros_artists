@@ -18,11 +18,14 @@ def main(args):
     img = cv2.imread('photos/AngularSquirrel2.png')
     
     P = Processor(img, rows=1, cols=1)
-    testingData = []
-    P.process_image(testingData=testingData)
+    # SD TODO::to be picked-up for next meeting
+    # testingData = []
+    print("Before process image")
+    P.process_image()
+    print("After process image")
 
-    for sub_img in testingData:
-        P.show_img(sub_img)
+    # for sub_img in testingData:
+    #     P.show_img(sub_img)
         
 if __name__ == '__main__':
     main(sys.argv) 
