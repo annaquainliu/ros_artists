@@ -39,7 +39,8 @@ class Planner:
         
         # make sure to secure connection with artist
         self.connections = [self.sever_socket.accept() for _ in range(self.__num_artists)]
-
+        print("Planner::Accecpted Connections")
+        
         # Threadsafe queue
         self.__queue = queue.Queue()
         self.distributeTaskLock = Lock()
@@ -55,7 +56,7 @@ class Planner:
         '''
             Add pre-processed list of coordinates to queue
         '''
-        queue.put(path)
+        self.__queue.put(path)
         print("Planner::Add task to queue")
         
         with self.distributeTaskLock:
@@ -68,7 +69,7 @@ class Planner:
         try:
             with self.distributeTaskLock:
                 
-                while self._queue.empty():
+                while self.__queue.empty():
                     self.dataAvailable.wait()
                 
                 task_to_distribute = self.__queue.get()
@@ -82,14 +83,28 @@ class Planner:
                         # Send robot i the path
                         print("Planner::Send task to artist")
                         self.send_messages(task_to_distribute, i)
-        except Exception:
-            print("TODO")
+        except Exception as e:
+            print(e)
         
         
     def send_messages(self, msg, artist_index):
-        metadata_str = f"{msg.shape}, int64"
-        self.connections[artist_index].send(metadata_str.encode())
-        self.connections[artist_index].send(msg.encode())
+        
+        metadata_str = str(msg.shape) + ";int64;"
+        metadata_to_send = metadata_str.encode('utf-8')
+        
+        # print(f"metadata_str: {metadata_str}")
+        # print(metadata_to_send.decode())
+        
+        print(f"message_to_send is of size: {len(metadata_to_send)}")
+        self.connections[artist_index][0].send(metadata_to_send)
+        
+        # Sending Actual Data... 
+        
+        # message_to_send = (str(msg.tobytes())).encode()
+        message_to_send = msg.tobytes()
+
+        # print(f"message_to_send is of size: {len(message_to_send)} bytes")
+        # self.connections[artist_index][0].send(message_to_send)
         
         # # response after the message is sent
         # data = self.sever_socket.recv(1024)

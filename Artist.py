@@ -52,15 +52,26 @@ class Artist:
         self.curr_angle = 0
         
         self.producer = Thread(target=self.receive_messages, args=())
+        self.producer.daemon = True  # Set the thread as a daemon
         self.producer.start()
         
         self.consumer = Thread(target=self.execute_tasks, args=())
+        self.consumer.daemon = True  # Set the thread as a daemon
         self.consumer.start()
         
-        intputVal = raw_input("Wiat for input: ")
-        print("Raw input is: ", intputVal)
-        if intputVal == "c":
-            sys.exit()
+        # intputVal = raw_input("Wiat for input: ")
+        # print("Raw input is: ", intputVal)
+        # if intputVal == "c":
+        #     sys.exit()
+        while True:
+            user_input = raw_input("enter char to quit: ")
+            try:
+                number = int(user_input)
+                print("You entered:", number)
+            except ValueError:
+                print("Character entered. Quitting program.")
+                sys.exit()
+                break
         
         
     
@@ -74,34 +85,59 @@ class Artist:
         PLANNER_PORT = 22
         print("ENTER receive tasks")
         
-    
-        
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-            connection = s.connect((PLANNER_IP, PLANNER_PORT))
-            with connection:
-                while True:
-                    metadata_str = connection.recv(1024).decode()
-                    if not metadata_str:
-                        break
-                    shape_str, dtype_str = metadata_str.split(',')
-                    shape = tuple(map(int, shape_str[1:-1].split()))
-                    dtype = np.dtype(dtype_str)
-
-                    # Receive the data
-                    data = connection.recv(4096)
-                    print("Artist::Receive data from Planner")
-                    
-                    # Create numpy array from received data
-                    task = np.frombuffer(data, dtype=dtype).reshape(shape)
-                    print("Received NumPy array:\n", task)
-                    
-                    with self.taskMutex:
-                        self.taskList.append(task)
-                        self.dataAvailable.notify()
-                    print("Data recieved through socket: ", data)
-        except:
+            print("Artist::Before Connect")
+            s.connect((PLANNER_IP, PLANNER_PORT))
+            
+            while True:
+                # print("Artist::Before Meta Data")
+                metadata = s.recv(1024)
+                
+                if len(metadata) == 0:
+                    continue
+                
+                print(metadata)
+                print("Artist::Recived data size:: ", len(metadata))
+                metadata_str = metadata.decode('utf-8')
+        
+                print("Artist::After Meta Data Str: ", metadata_str)
+                
+                if metadata_str is None:
+                    print("Arist::metadata is none")
+                    break
+                
+                print("metadata_str =", metadata_str)
+                shape_str, dtype_str, _ = metadata_str.split(';')
+                print("after split: ", shape_str, ", ", dtype_str)
+                
+                shape = tuple(map(int, shape_str[1:-1].split(',')))
+                dtype = np.dtype(dtype_str)
+                
+                
+                # # Receive the data
+                # data = b''
+                # while True:
+                #     chunk = s.recv(1024)
+                #     if not chunk:
+                #         break  # Connection closed or no more data
+                #     data += chunk
+                
+                # print("Artist::Receive data from Planner")
+                
+                # # bytes_np_dec = data.decode('unicode-escape').encode('ISO-8859-1')[2:-1]
+                # print("Artist::Before from buffer")
+                # # Create numpy array from received data
+                # task = np.frombuffer(data, dtype=dtype).reshape(shape)
+                # print("Received NumPy array:\n", task)
+                
+                # with self.taskMutex:
+                #     self.taskList.append(task)
+                #     self.dataAvailable.notify()
+                # print("Data recieved through socket: ", data)
+        except Exception as e:
+            print("Artist::Receive Message::Exception:: ", e)
             pass
         finally:
             s.close()
@@ -119,11 +155,11 @@ class Artist:
                 self.dataAvailable.wait()
                 
             # find closest task to execute
-            closest_task = self.task_list[0]
+            closest_task = self.taskList[0]
             curr_dist = self.GetEuclidianDistance(closest_task[0, 0], self.curr_pos)
             closest_id = 0
             
-            for idx, task in enumerate(self.task_list[1:]):
+            for idx, task in enumerate(self.taskList[1:]):
                 dist = self.GetEuclidianDistance(self.curr_pos, task[0, 0])
                 if dist < curr_dist: 
                     closest_task = task

@@ -292,17 +292,16 @@ class Processor:
         approx_contours = Processor.ApproxContours(filtered_contours, 5)
         
         # Plan a path through the approximated contours starting from the initial position
-        print("approx_contours: ", approx_contours)
+        # print("approx_contours: ", approx_contours)
         # print("left, right", left, top)
         path = Processor.PathPlan(approx_contours, np.array([[left, top]]))
         
         if testingData is None:
-            self.planner.AddTaskToQueue(path)
+            self.__planner.AddTaskToQueue(path)
         else:
             # Add the path to the queue
             canvas = Processor.DrawPath(image_chunk, path)
             testingData.append(canvas)
-
     
     def split_image(self):
         '''
