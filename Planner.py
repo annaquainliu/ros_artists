@@ -39,6 +39,7 @@ class Planner:
         
         # make sure to secure connection with artist
         self.connections = [self.sever_socket.accept() for _ in range(self.__num_artists)]
+        print("Secured connection with artists")
 
         # Threadsafe queue
         self.__queue = queue.Queue()

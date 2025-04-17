@@ -70,17 +70,19 @@ class Artist:
             continuously listens for tasks and pushes each task onto its taskList.
             
         '''
-        PLANNER_IP = "10.5.13.238"
+        PLANNER_IP = "10.242.234.194"
         PLANNER_PORT = 22
         print("ENTER receive tasks")
-        
-    
         
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+            print("Artist::Before trying to connent")
+            # SD TODO::for next meeting::why is it not conneting
             connection = s.connect((PLANNER_IP, PLANNER_PORT))
+            print("Artist::After trying to connent")
             with connection:
+                print("Artist::With connection")
                 while True:
                     metadata_str = connection.recv(1024).decode()
                     if not metadata_str:
