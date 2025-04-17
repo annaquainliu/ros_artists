@@ -15,7 +15,7 @@ import sys
 def main(args):
     
     # Load the image (e.g., squirrel.png)
-    img = cv2.imread('photos/AngularSquirrel2.png')
+    img = cv2.imread('photos/square2.png')
     
     P = Processor(img, rows=1, cols=1)
     # SD TODO::to be picked-up for next meeting

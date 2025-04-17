@@ -81,7 +81,7 @@ class Artist:
             continuously listens for tasks and pushes each task onto its taskList.
             
         '''
-        PLANNER_IP = "10.242.234.194"
+        PLANNER_IP = "10.5.13.238"
         PLANNER_PORT = 22
         print("ENTER receive tasks")
         
@@ -102,40 +102,40 @@ class Artist:
                 print("Artist::Recived data size:: ", len(metadata))
                 metadata_str = metadata.decode('utf-8')
         
-                print("Artist::After Meta Data Str: ", metadata_str)
+                # print("Artist::After Meta Data Str: ", metadata_str)
                 
                 if metadata_str is None:
                     print("Arist::metadata is none")
                     break
                 
                 print("metadata_str =", metadata_str)
-                shape_str, dtype_str, _ = metadata_str.split(';')
-                print("after split: ", shape_str, ", ", dtype_str)
+                shape_str, dtype_str, message_len, _ = metadata_str.split(';')
+                print("after split::", shape_str, "::", dtype_str, "::", message_len)
                 
                 shape = tuple(map(int, shape_str[1:-1].split(',')))
                 dtype = np.dtype(dtype_str)
                 
                 
-                # # Receive the data
-                # data = b''
-                # while True:
-                #     chunk = s.recv(1024)
-                #     if not chunk:
-                #         break  # Connection closed or no more data
-                #     data += chunk
+                # Receive the data
+                data = b''
+                while True:
+                    chunk = s.recv(1024)
+                    if not chunk:
+                        break  # Connection closed or no more data
+                    data += chunk
                 
-                # print("Artist::Receive data from Planner")
+                print("Artist::Receive data from Planner")
                 
-                # # bytes_np_dec = data.decode('unicode-escape').encode('ISO-8859-1')[2:-1]
-                # print("Artist::Before from buffer")
-                # # Create numpy array from received data
-                # task = np.frombuffer(data, dtype=dtype).reshape(shape)
-                # print("Received NumPy array:\n", task)
+                # bytes_np_dec = data.decode('unicode-escape').encode('ISO-8859-1')[2:-1]
+                print("Artist::Before from buffer")
+                # Create numpy array from received data
+                task = np.frombuffer(data[:int(message_len)], dtype=dtype).reshape(shape)
+                print("Received NumPy array:\n", task)
                 
-                # with self.taskMutex:
-                #     self.taskList.append(task)
-                #     self.dataAvailable.notify()
-                # print("Data recieved through socket: ", data)
+                with self.taskMutex:
+                    self.taskList.append(task)
+                    self.dataAvailable.notify()
+                print("Data recieved through socket: ", data)
         except Exception as e:
             print("Artist::Receive Message::Exception:: ", e)
             pass
@@ -157,16 +157,14 @@ class Artist:
             # find closest task to execute
             closest_task = self.taskList[0]
             curr_dist = self.GetEuclidianDistance(closest_task[0, 0], self.curr_pos)
-            closest_id = 0
             
             for idx, task in enumerate(self.taskList[1:]):
                 dist = self.GetEuclidianDistance(self.curr_pos, task[0, 0])
                 if dist < curr_dist: 
                     closest_task = task
                     curr_dist = dist
-                    closest_id = idx
             
-            self.taskList.remove(closest_id)
+            self.taskList.remove(closest_task)
             
         # Move the robots in the order of the path for the task
         for next_coord in closest_task:
@@ -263,6 +261,8 @@ class Artist:
             float: The Euclidean distance between the initial and final coordinates.
         """
         # Use numpy's linear algebra norm function to calculate the Euclidean distance
+        print("Artist::GetEuc::coor_fin::", coords_final, "::Type::", type(coords_final))
+        print("Artist::GetEuc::coor_init::", coords_init, "::Type::", type(coords_init))
         distance = np.linalg.norm(coords_final - coords_init)
         return distance
 
@@ -309,12 +309,11 @@ class Artist:
 
         # Print out control estimated coordinates and current odometer pose for debugging
         print("Control estimated coords:", coords_final)
-        print("Odometer pose:", self.listener.pose)
             
 
 def main(args):
-    init_x = args[1]
-    init_y = args[2]
+    init_x = int(args[1])
+    init_y = int(args[2])
     
     
     artist = Artist((init_x, init_y))

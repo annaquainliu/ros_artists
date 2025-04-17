@@ -16,6 +16,7 @@ import queue
 from threading import Lock, Condition
 import socket
 import threading
+import math
 
 class Planner:
     
@@ -88,23 +89,26 @@ class Planner:
         
         
     def send_messages(self, msg, artist_index):
+        message_to_send = msg.tobytes()
+        msg_len = str(len(message_to_send))
         
-        metadata_str = str(msg.shape) + ";int64;"
+        metadata_str = str(msg.shape) + ";int64;" + msg_len + ";"
         metadata_to_send = metadata_str.encode('utf-8')
+        padded_metadata = metadata_to_send.ljust(1024, b'\0')
         
         # print(f"metadata_str: {metadata_str}")
         # print(metadata_to_send.decode())
         
-        print(f"message_to_send is of size: {len(metadata_to_send)}")
-        self.connections[artist_index][0].send(metadata_to_send)
+        print(f"message_to_send is of size: {len(padded_metadata)}")
+        self.connections[artist_index][0].sendall(padded_metadata)
         
-        # Sending Actual Data... 
+        # # Sending Actual Data... 
         
-        # message_to_send = (str(msg.tobytes())).encode()
-        message_to_send = msg.tobytes()
+        # # message_to_send = (str(msg.tobytes())).encode()
+        padded_array = message_to_send.ljust((math.ceil(len(message_to_send) / 1024)) * 1024, b'\0')
 
-        # print(f"message_to_send is of size: {len(message_to_send)} bytes")
-        # self.connections[artist_index][0].send(message_to_send)
+        print(f"message_to_send is of size: {len(padded_array)} bytes")
+        self.connections[artist_index][0].sendall(padded_array)
         
         # # response after the message is sent
         # data = self.sever_socket.recv(1024)
