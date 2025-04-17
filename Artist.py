@@ -81,7 +81,7 @@ class Artist:
             continuously listens for tasks and pushes each task onto its taskList.
             
         '''
-        PLANNER_IP = "10.5.13.238"
+        PLANNER_IP = "10.242.234.194"
         PLANNER_PORT = 22
         print("ENTER receive tasks")
         
