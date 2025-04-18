@@ -15,13 +15,16 @@ import sys
 def main(args):
     
     # Load the image (e.g., squirrel.png)
-    img = cv2.imread('photos/square2.png')
+    img = cv2.imread('photos/squirrel3.jpg')
     
-    P = Processor(img, rows=1, cols=1)
+    print(img.shape)
+    
+    P = Processor(img, rows=2, cols=2)
     # SD TODO::to be picked-up for next meeting
     # testingData = []
     print("Before process image")
     P.process_image()
+    # P.process_image(testingData=testingData)
     print("After process image")
 
     # for sub_img in testingData:

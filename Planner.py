@@ -22,7 +22,7 @@ class Planner:
     
     
     def __init__(self, img_w, img_h):
-        self.__num_artists = 1
+        self.__num_artists = 2
         self.__artist_x_boundaries = []
         
         # Each boundary represents the [start_x, end_x)
@@ -52,15 +52,14 @@ class Planner:
         thread.start()
     
 
-        
     def AddTaskToQueue(self, path):
         '''
             Add pre-processed list of coordinates to queue
         '''
-        self.__queue.put(path)
-        print("Planner::Add task to queue")
         
         with self.distributeTaskLock:
+            print("Planner::Add task to queue")
+            self.__queue.put(path)
             self.dataAvailable.notify()
     
     def DistributeTask(self):
@@ -73,6 +72,7 @@ class Planner:
                 while self.__queue.empty():
                     self.dataAvailable.wait()
                 
+                print(f"len of planner before get: {self.__queue.qsize()}")
                 task_to_distribute = self.__queue.get()
                 first_x_coordinate = task_to_distribute[0, 0, 0]
                 
@@ -82,10 +82,16 @@ class Planner:
                     if (first_x_coordinate >= self.__artist_x_boundaries[i][0] 
                         and first_x_coordinate < self.__artist_x_boundaries[i][1]):
                         # Send robot i the path
+                        print(f"len of planner after get: {self.__queue.qsize()}")
                         print("Planner::Send task to artist")
                         self.send_messages(task_to_distribute, i)
+                    else: 
+                        print("not distrbuting task to any artists bc of out of range")
+            
         except Exception as e:
             print(e)
+        
+        self.DistributeTask()
         
         
     def send_messages(self, msg, artist_index):

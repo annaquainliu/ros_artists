@@ -265,13 +265,13 @@ class Processor:
         # and the rows [top, bottom] create an image chunk
         image_chunk = self.__image[top : bottom + 1, left : right + 1, :]
         
-        print(f"image dimensions: {self.__image.shape}")
-        print(f"image chunk shape: {image_chunk.shape}")
+        # print(f"image dimensions: {self.__image.shape}")
+        # print(f"image chunk shape: {image_chunk.shape}")
         
         # Convert the image to grayscale
         grayscale_img = Processor.ColorToGrayscale(image_chunk)
         
-        print(f"Grayscale image shape: {grayscale_img.shape}")
+        # print(f"Grayscale image shape: {grayscale_img.shape}")
         
         # Adjust the contrast and brightness of the grayscale image
         adjusted_img = Processor.AdjustContrast(grayscale_img)

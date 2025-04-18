@@ -1,0 +1,19 @@
+Use 2 Turtlebot for Artist Painting
+
+    Host is MY Machine
+        Computer IP: 10.5.13.238
+    Artist-1
+        Robot Name: 7. Baymax
+        Computer: 6. Weebo
+        Computer Password: turtlebot
+        Computer IP: 10.5.15.131
+    Artist-2
+        Robot Name: 5. EVE
+        Computer: MuLIP EVE
+        Computer Password: turtlebot112
+        Computer IP: 10.5.15.131
+    What to do
+        - start terminal on local machine
+        - run 'ssh -vvv turtlebot@10.5.15.131'
+
+new computer password: turtlebot112

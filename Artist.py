@@ -59,10 +59,6 @@ class Artist:
         self.consumer.daemon = True  # Set the thread as a daemon
         self.consumer.start()
         
-        # intputVal = raw_input("Wiat for input: ")
-        # print("Raw input is: ", intputVal)
-        # if intputVal == "c":
-        #     sys.exit()
         while True:
             user_input = raw_input("enter char to quit: ")
             try:
@@ -108,22 +104,23 @@ class Artist:
                     print("Arist::metadata is none")
                     break
                 
-                print("metadata_str =", metadata_str)
                 shape_str, dtype_str, message_len, _ = metadata_str.split(';')
+                message_len = int(message_len)
                 print("after split::", shape_str, "::", dtype_str, "::", message_len)
                 
                 shape = tuple(map(int, shape_str[1:-1].split(',')))
                 dtype = np.dtype(dtype_str)
                 
-                
                 # Receive the data
                 data = b''
-                while True:
+                curr_message_size = 0
+                while curr_message_size < message_len:
                     chunk = s.recv(1024)
                     if not chunk:
                         break  # Connection closed or no more data
                     data += chunk
-                
+                    curr_message_size += len(chunk)
+                   
                 print("Artist::Receive data from Planner")
                 
                 # bytes_np_dec = data.decode('unicode-escape').encode('ISO-8859-1')[2:-1]
@@ -153,6 +150,7 @@ class Artist:
             
             while (len(self.taskList) == 0):
                 self.dataAvailable.wait()
+            print("Artist::Execute new chunks")
                 
             # find closest task to execute
             closest_task = self.taskList[0]
