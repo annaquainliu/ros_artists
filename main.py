@@ -13,22 +13,25 @@ from skimage.metrics import structural_similarity as ssim
 import sys
 
 def main(args):
+    if len(args) < 2:
+        print("Planner::Main::Usage::python main.py <image_path_1> <image_path_2> ...")
+        sys.exit()
     
     # Load the image (e.g., squirrel.png)
-    img = cv2.imread('photos/squirrel3.jpg')
+    images = args[1:]
+    cv2_images = [cv2.imread(image) for image in images]
     
-    print(img.shape)
+    P = Processor(cv2_images)
     
-    P = Processor(img, rows=2, cols=2)
-    # SD TODO::to be picked-up for next meeting
-    # testingData = []
     print("Before process image")
-    P.process_image()
-    # P.process_image(testingData=testingData)
+    P.process_images()
     print("After process image")
-
+    
+    # testingData = []
+    # P.process_images(testingData=testingData)
     # for sub_img in testingData:
+    #     print(sub_img.shape)
     #     P.show_img(sub_img)
         
 if __name__ == '__main__':
-    main(sys.argv) 
+    main(sys.argv)

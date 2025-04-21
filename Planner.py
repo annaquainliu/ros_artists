@@ -21,13 +21,10 @@ import math
 class Planner:
     
     
-    def __init__(self, img_w, img_h):
-        self.__num_artists = 2
-        self.__artist_x_boundaries = []
-        
-        # Each boundary represents the [start_x, end_x)
-        for i in range(self.__num_artists):
-            self.__artist_x_boundaries.append((i * (img_w // self.__num_artists), (i + 1) * (img_w // self.__num_artists)))
+    def __init__(self, num_artists : int):
+        self.__num_artists = num_artists
+        # __assigned_task[i] is true if the ith artist has been assigned an image
+        self.__assigned_task = [False] * self.__num_artists
             
         ARTIST_IP = "0.0.0.0"   # accpet connetion from any IP
         ARTIST_PORT = 22     # need to used some non-priviledge port
@@ -79,15 +76,16 @@ class Planner:
                 print(f"first_x_coordinate: {first_x_coordinate}")
                 
                 for i in range(self.__num_artists):
-                    if (first_x_coordinate >= self.__artist_x_boundaries[i][0] 
-                        and first_x_coordinate < self.__artist_x_boundaries[i][1]):
+                    if not self.__assigned_task[i]:
+                        self.__assigned_task[i] = True
                         # Send robot i the path
                         print(f"len of planner after get: {self.__queue.qsize()}")
-                        print("Planner::Send task to artist")
+                        print(f"Planner::Send task to artist {i}")
                         self.send_messages(task_to_distribute, i)
+                        break
                     else: 
-                        print("not distrbuting task to any artists bc of out of range")
-            
+                        print("not distrbuting task to artist bc already assigned")
+        
         except Exception as e:
             print(e)
         

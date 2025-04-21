@@ -13,8 +13,6 @@ import numpy as np
 from typing import Tuple
 import threading
 
-NUM_ROBOTS = 2
-
 # Constants for image processing and particle simulation
 GAUSS_KERNAL_SIZE = 3         # Kernel size for Gaussian blur
 GAUSS_SIGMA = 0               # Sigma value for Gaussian blur
@@ -24,14 +22,11 @@ BRIGHTNESS = 50               # Brightness adjustment factor
 
 class Processor:
 
-    def __init__(self, image: np.ndarray, rows=4, cols=5):
-        self.__image = image
-        h, w, _ = self.__image.shape
-        self.__planner = Planner(w, h)
-        self.__num_rows = rows
-        self.__num_cols = cols
-        self.__num_threads = self.__num_rows * self.__num_cols
-    
+    def __init__(self, images: list[np.ndarray]):
+        self.__images = images
+        num_robots = len(self.__images)
+        self.__planner = Planner(num_robots)
+        self.__num_threads = num_robots
     
     @staticmethod
     def PathPlan(contours: list, init_coord: np.ndarray) -> np.ndarray:
@@ -99,19 +94,19 @@ class Processor:
         # Append the first point of the contour to the end of the rearranged contour to close the loop
         return np.append(rearranged_contour, rearranged_contour[0][np.newaxis, ...], axis=0)
     
-    def process_image(self, testingData = None):
+    def process_images(self, testingData = None):
         '''
-            Spawn self.__num_threads of threads to process each chunk of the self.__image
+            Spawn self.__num_threads of threads to process each chunk of the self.__images
             
             Each thread then communicates to the Planner object to add the list of coordinates
             onto the queue.
         '''
-        subimage_range_list = self.split_image()
+        
         threads = []
         
         # Assumption: # thread = # sub-image chunks
-        for i in range(len(subimage_range_list)):
-            thread = threading.Thread(target=self.process_chunk,args=[subimage_range_list[i], testingData])
+        for i in range(len(self.__images)):
+            thread = threading.Thread(target=self.process_image,args=[self.__images[i], testingData])
             threads.append(thread)
         
         # Start threads
@@ -234,9 +229,7 @@ class Processor:
             
         return approx_contours
     
-    def process_chunk(self, chunk_image_range 
-                            : Tuple[Tuple[int, int], Tuple[int, int]], 
-                            testingData = None):
+    def process_image(self, image : np.ndarray, testingData = None):
         '''
             Function ran by a thread spawned from the main Processor thread
             
@@ -259,17 +252,9 @@ class Processor:
             None
             
         '''
-        ((left, top), (right, bottom)) = chunk_image_range
-        
-        # For the specified chunk between the columns [left, right] 
-        # and the rows [top, bottom] create an image chunk
-        image_chunk = self.__image[top : bottom + 1, left : right + 1, :]
-        
-        # print(f"image dimensions: {self.__image.shape}")
-        # print(f"image chunk shape: {image_chunk.shape}")
-        
+
         # Convert the image to grayscale
-        grayscale_img = Processor.ColorToGrayscale(image_chunk)
+        grayscale_img = Processor.ColorToGrayscale(image)
         
         # print(f"Grayscale image shape: {grayscale_img.shape}")
         
@@ -294,41 +279,15 @@ class Processor:
         # Plan a path through the approximated contours starting from the initial position
         # print("approx_contours: ", approx_contours)
         # print("left, right", left, top)
-        path = Processor.PathPlan(approx_contours, np.array([[left, top]]))
+        init_coord = np.array([[0, 0]])
+        path = Processor.PathPlan(approx_contours, init_coord)
         
         if testingData is None:
             self.__planner.AddTaskToQueue(path)
         else:
             # Add the path to the queue
-            canvas = Processor.DrawPath(image_chunk, path)
+            canvas = Processor.DrawPath(image, path)
             testingData.append(canvas)
-    
-    def split_image(self):
-        '''
-        Split each full image into subimages 
-        Input: an image object (cv2 image)
-        Ouput: A list of image ranges
-        [(top_left_coordinate, bottom_right_coordinate)]
-        '''
-        img_height, img_width, _ = self.__image.shape
-        
-        section_width = math.ceil(img_width / self.__num_cols)
-        section_height = math.ceil(img_height / self.__num_rows)
-        
-        subimage_range_list = []
-        
-        for x in range(self.__num_cols):
-            for y in range(self.__num_rows):
-                left_x = x * section_width
-                left_y = y * section_height
-
-                right_x = min(left_x + section_width, img_width)
-                right_y = min(left_y + section_height, img_height)
-
-                subimage_range_list.append(((left_x, left_y), (right_x, right_y)))
-                # print(subimage_range_list[-1])
-        
-        return subimage_range_list
 
     """
     A class for performing various image processing tasks including

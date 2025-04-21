@@ -21,14 +21,14 @@ Use 2 Turtlebot for Artist Painting
         Get Artist.py on Artist-2
             - copy Artist.py from Host into Artist-2 local by running:
                 scp -r -v /Users/sophonnidy/Halligan/cs21-others/tracked/final-proj/ros_artists/Artist.py eve@10.5.12.45:/home/eve/turtlebot_docker/SquirrelArtists/Artist.py
-            - run the following command to go into docker container
+            - In Artist2, run the following command to go into docker container
                 docker run -it --device=/dev/kobuki --net=host --device=/dev/bus/usb/ --device=/dev/ttyUSB0 --device=/dev/ttyUSB1:/dev/rplidar -v /sys/fs/cgroup:ro turtlebot:sensar /bin/bash
             - open up a new terminal
             - copy Artist-2 local to Artist-2 docker container
                 - launch a terminal in Artist-2 computer
                 - go to /home/eve/turtlebot_docker
                 - run the following command:
-                    docker cp SquirrelArtists/Artist.py {container-id (get by doing 'docker ps -a')}:root/catkin_ws/src/SquirrelArtists/
+                    docker cp SquirrelArtists/Artist.py {container-id (get by doing 'docker ps -a')}:root/catkin_ws/src/cs21/
         
         BEFORE get the two robot to draws
             - in a new terminal, shh into Artist-1 computer by running:

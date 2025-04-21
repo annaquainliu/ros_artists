@@ -24,12 +24,10 @@ class Artist:
     
     """
     
-    def __init__(self, init_pos):
+    def __init__(self):
         '''
             Initializes the Artist class, setting up the ROS node, publisher, and initial robot pose.
 
-            Args:
-                init_pos (np.array): Initial position of the robot (x, y) in the environment.
         '''
         self.taskList = []
         self.taskMutex = Lock()
@@ -48,7 +46,7 @@ class Artist:
         self.vel_msg = Twist()
 
         # Set the robot's current position and initial angle
-        self.curr_pos = init_pos
+        self.curr_pos = (0, 0)
         self.curr_angle = 0
         
         self.producer = Thread(target=self.receive_messages, args=())
@@ -310,11 +308,7 @@ class Artist:
             
 
 def main(args):
-    init_x = int(args[1])
-    init_y = int(args[2])
-    
-    
-    artist = Artist((init_x, init_y))
+    artist = Artist()
 
 if __name__ == '__main__':
     main(sys.argv)
