@@ -23,14 +23,14 @@ def main(args):
     
     # Initialize Processor to perform image processing
     processor = Processor(cv2_images)
-    processor.InitThreadsForProcessing()
+    # processor.InitThreadsForProcessing()
     
     # SD TODO::this below code is used for testing
-    # testingData = []
-    # processor.InitThreadsForProcessing(testingData=testingData)
-    # for sub_img in testingData:
-    #     print(sub_img.shape)
-    #     processor.show_img(sub_img)
+    testingData = []
+    processor.InitThreadsForProcessing(testingData=testingData)
+    for sub_img in testingData:
+        print(sub_img.shape)
+        processor.show_img(sub_img)
         
 if __name__ == '__main__':
     main(sys.argv)
