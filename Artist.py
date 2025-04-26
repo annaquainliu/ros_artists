@@ -61,9 +61,7 @@ class Artist:
             user_input = raw_input("enter char to quit: ")
             try:
                 number = int(user_input)
-                print("You entered:", number)
             except ValueError:
-                print("Character entered. Quitting program.")
                 sys.exit()
                 break
         
@@ -77,12 +75,12 @@ class Artist:
         '''
         PLANNER_IP = "10.5.13.238"
         PLANNER_PORT = 22
-        print("ENTER receive tasks")
+        
         
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-            print("Artist::Before Connect")
+            
             s.connect((PLANNER_IP, PLANNER_PORT))
             
             while True:
@@ -92,19 +90,15 @@ class Artist:
                 if len(metadata) == 0:
                     continue
                 
-                print(metadata)
-                print("Artist::Recived data size:: ", len(metadata))
                 metadata_str = metadata.decode('utf-8')
         
                 # print("Artist::After Meta Data Str: ", metadata_str)
                 
                 if metadata_str is None:
-                    print("Arist::metadata is none")
                     break
                 
                 shape_str, dtype_str, message_len, _ = metadata_str.split(';')
                 message_len = int(message_len)
-                print("after split::", shape_str, "::", dtype_str, "::", message_len)
                 
                 shape = tuple(map(int, shape_str[1:-1].split(',')))
                 dtype = np.dtype(dtype_str)
@@ -119,18 +113,12 @@ class Artist:
                     data += chunk
                     curr_message_size += len(chunk)
                    
-                print("Artist::Receive data from Planner")
-                
-                # bytes_np_dec = data.decode('unicode-escape').encode('ISO-8859-1')[2:-1]
-                print("Artist::Before from buffer")
                 # Create numpy array from received data
-                task = np.frombuffer(data[:int(message_len)], dtype=dtype).reshape(shape)
-                print("Received NumPy array:\n", task)
+                task = np.frombuffer(data[:int(message_len)], dtype=dtype).reshape(shape)                
                 
                 with self.taskMutex:
                     self.taskList.append(task)
                     self.dataAvailable.notify()
-                print("Data recieved through socket: ", data)
         except Exception as e:
             print("Artist::Receive Message::Exception:: ", e)
             pass
@@ -143,12 +131,9 @@ class Artist:
             the closest task to its current position.
             
         '''
-        print("ENTER execute tasks")
-        with self.taskMutex:
-            
+        with self.taskMutex: 
             while (len(self.taskList) == 0):
                 self.dataAvailable.wait()
-            print("Artist::Execute new chunks")
                 
             # find closest task to execute
             closest_task = self.taskList[0]
@@ -257,8 +242,6 @@ class Artist:
             float: The Euclidean distance between the initial and final coordinates.
         """
         # Use numpy's linear algebra norm function to calculate the Euclidean distance
-        print("Artist::GetEuc::coor_fin::", coords_final, "::Type::", type(coords_final))
-        print("Artist::GetEuc::coor_init::", coords_init, "::Type::", type(coords_init))
         distance = np.linalg.norm(coords_final - coords_init)
         return distance
 
@@ -302,10 +285,6 @@ class Artist:
         # Update the current position and orientation after movement
         self.curr_pos = coords_final
         self.curr_angle += angle
-
-        # Print out control estimated coordinates and current odometer pose for debugging
-        print("Control estimated coords:", coords_final)
-            
 
 def main(args):
     artist = Artist()

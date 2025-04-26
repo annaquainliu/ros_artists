@@ -29,15 +29,13 @@ class Planner:
         ARTIST_IP = "0.0.0.0"   # accpet connetion from any IP
         ARTIST_PORT = 22     # need to used some non-priviledge port
         
-        print("Before Planner Socket Bind")
+        # SD TODO::comment below code (connection code) for wanting to look at images after they have been processed
         self.sever_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sever_socket.bind((ARTIST_IP, ARTIST_PORT))
         self.sever_socket.listen(self.__num_artists)
-        print("After Planner Socket Bind")
         
         # make sure to secure connection with artist
         self.connections = [self.sever_socket.accept() for _ in range(self.__num_artists)]
-        print("Planner::Accecpted Connections")
         
         # Threadsafe queue
         self.__queue = queue.Queue()
@@ -55,7 +53,6 @@ class Planner:
         '''
         
         with self.distributeTaskLock:
-            print("Planner::Add task to queue")
             self.__queue.put(path)
             self.dataAvailable.notify()
     
@@ -69,17 +66,16 @@ class Planner:
                 while self.__queue.empty():
                     self.dataAvailable.wait()
                 
-                print(f"len of planner before get: {self.__queue.qsize()}")
                 task_to_distribute = self.__queue.get()
-                first_x_coordinate = task_to_distribute[0, 0, 0]
                 
+                # SD TODO::used to show the weird dimension of how we represent our coordinate
+                first_x_coordinate = task_to_distribute[0, 0, 0]
                 print(f"first_x_coordinate: {first_x_coordinate}")
                 
                 for i in range(self.__num_artists):
                     if not self.__assigned_task[i]:
                         self.__assigned_task[i] = True
                         # Send robot i the path
-                        print(f"len of planner after get: {self.__queue.qsize()}")
                         print(f"Planner::Send task to artist {i}")
                         self.send_messages(task_to_distribute, i)
                         break
@@ -100,21 +96,8 @@ class Planner:
         metadata_to_send = metadata_str.encode('utf-8')
         padded_metadata = metadata_to_send.ljust(1024, b'\0')
         
-        # print(f"metadata_str: {metadata_str}")
-        # print(metadata_to_send.decode())
-        
-        print(f"message_to_send is of size: {len(padded_metadata)}")
         self.connections[artist_index][0].sendall(padded_metadata)
         
-        # # Sending Actual Data... 
-        
-        # # message_to_send = (str(msg.tobytes())).encode()
         padded_array = message_to_send.ljust((math.ceil(len(message_to_send) / 1024)) * 1024, b'\0')
 
-        print(f"message_to_send is of size: {len(padded_array)} bytes")
         self.connections[artist_index][0].sendall(padded_array)
-        
-        # # response after the message is sent
-        # data = self.sever_socket.recv(1024)
-        # print("Server says:", data.decode())
-

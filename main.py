@@ -21,17 +21,16 @@ def main(args):
     images = args[1:]
     cv2_images = [cv2.imread(image) for image in images]
     
-    P = Processor(cv2_images)
+    # Initialize Processor to perform image processing
+    processor = Processor(cv2_images)
+    processor.InitThreadsForProcessing()
     
-    print("Before process image")
-    P.process_images()
-    print("After process image")
-    
+    # SD TODO::this below code is used for testing
     # testingData = []
-    # P.process_images(testingData=testingData)
+    # processor.InitThreadsForProcessing(testingData=testingData)
     # for sub_img in testingData:
     #     print(sub_img.shape)
-    #     P.show_img(sub_img)
+    #     processor.show_img(sub_img)
         
 if __name__ == '__main__':
     main(sys.argv)

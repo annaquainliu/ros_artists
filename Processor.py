@@ -94,7 +94,7 @@ class Processor:
         # Append the first point of the contour to the end of the rearranged contour to close the loop
         return np.append(rearranged_contour, rearranged_contour[0][np.newaxis, ...], axis=0)
     
-    def process_images(self, testingData = None):
+    def InitThreadsForProcessing(self, testingData = None):
         '''
             Spawn self.__num_threads of threads to process each chunk of the self.__images
             
@@ -106,7 +106,7 @@ class Processor:
         
         # Assumption: # thread = # sub-image chunks
         for i in range(len(self.__images)):
-            thread = threading.Thread(target=self.process_image,args=[self.__images[i], testingData])
+            thread = threading.Thread(target=self.ProcessImageAndEnqueueTask,args=[self.__images[i], testingData])
             threads.append(thread)
         
         # Start threads
@@ -229,7 +229,7 @@ class Processor:
             
         return approx_contours
     
-    def process_image(self, image : np.ndarray, testingData = None):
+    def ProcessImageAndEnqueueTask(self, image : np.ndarray, testingData = None):
         '''
             Function ran by a thread spawned from the main Processor thread
             
