@@ -1,3 +1,37 @@
+Project Content: 
+
+README
+    This file! It contains the instructions to run the program. It documents 
+    the hardware and software resources that we were working with when testing. 
+    Feel free to use the same turtlebots and laptops to play with our program. 
+    Corresponding set up instructions are included in this file.
+main.py
+    This is the driver file for the program. 
+Processor.py
+    This file contains the implementation of the Processor class, which 
+    encapsulates all the logics and methods that handles the process of 
+    transforming the image supplied into image contours and path coordinates. 
+    An instance of the processor class is initiated by main and used to spring 
+    off the image processing. The processor also initialized a planner, which 
+    the processor submits the transformed paths to to be sent to the turtlebots. 
+Planner.py
+    This file contains the implementation of the Planner class, which handles 
+    the collection and distribution of the transformed paths that the robots 
+    should traverse to draw the images. It waits for the tasks in the form of 
+    paths from the processor threads and handles the distributed communication 
+    with the turtlebots to send these received tasks.
+Artist.py
+    This file contains the implementation of the Artist class, which contains 
+    all of the logic that supports the turtlebots for our program. For this 
+    reason, it also has an attached main definition, which simply initializes 
+    an instance of the Artist class. Each Artist instance initializes a 
+    connection with the main computer that hands out tasks through a python TCP 
+    socket connection. Then, it listens to the connection for tasks and adds 
+    them to its task queue to be executed at the earliest time possible. 
+
+
+Instructions to runt the program: 
+
 Use 2 Turtlebot for Artist Painting
 
     Host is MY Machine
@@ -58,7 +92,7 @@ Other Notes
         Goal: Create a Python project using the library ROS that programs multiple robots to 
         concurrently draw an image. 
 
-        Potential Ideas:
+        Potential Future Ideas:
         - Robots can swap their drawing instruments with arms.
         - Arms or turtle bots can be used, or both, which can introduce more concurrency in a project. Arms can help simplify geometry and have a better fixed drawing instrument.
         - 2-3 turtlebots can have their own colors, none of them should interfere with each other.
