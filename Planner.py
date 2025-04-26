@@ -72,20 +72,19 @@ class Planner:
 
                 # SD TODO::used to show the weird dimension of how we represent our coordinate
                 first_x_coordinate = task_to_distribute[0, 0, 0]
-                print(f"first_x_coordinate: {first_x_coordinate}")
+                print(f"INFO::Planner::DistributeTask::first_x_coordinate: {first_x_coordinate}")
 
                 # Find the first available artist and send the task
                 for i in range(self.__num_artists):
                     if not self.__assigned_task[i]:
                         self.__assigned_task[i] = True
-                        print(f"Planner::Send task to artist {i}")
                         self.send_messages(task_to_distribute, i)
                         break
                     else: 
-                        print("Not distributing task to artist because already assigned")
+                        print("INFO::Planner::DistributeTask::Failed task distribution::Artist already been assigned a task")
 
         except Exception as e:
-            print(f"Exception in DistributeTask: {e}")
+            print(f"ERROR::Planner::DistributeTask::Exception in DistributeTask: {e}")
         
         # Recursively call to continue listening for new tasks
         self.DistributeTask()

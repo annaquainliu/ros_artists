@@ -113,7 +113,7 @@ class Artist:
                     self.dataAvailable.notify()
 
         except Exception as e:
-            print("Artist::Receive Message::Exception:: ", e)
+            print("ERROR::Artist::Receive Message::Exception:: ", e)
             pass
         finally:
             s.close()

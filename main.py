@@ -14,7 +14,7 @@ import sys
 
 def main(args):
     if len(args) < 2:
-        print("Planner::Main::Usage::python main.py <image_path_1> <image_path_2> ...")
+        print("ERROR::main::Command Example::python main.py <image_path_1> <image_path_2> ...")
         sys.exit()
     
     # Load the image (e.g., squirrel.png)
@@ -29,7 +29,7 @@ def main(args):
     testingData = []
     processor.InitThreadsForProcessing(testingData=testingData)
     for sub_img in testingData:
-        print(sub_img.shape)
+        print("INFO::main::image shape:: ", sub_img.shape)
         processor.show_img(sub_img)
         
 if __name__ == '__main__':
