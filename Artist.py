@@ -1,8 +1,7 @@
 '''
-
-    One artist (one machine) waits for and receives a list of coordinates 
-    in a message from the Planner process.
-    
+    One artist (robot or machine) waits for and receives a list of coordinates 
+    from the Planner process, then physically follows the path by moving 
+    through those points.
 '''
 
 from threading import Thread, Lock, Condition
@@ -13,50 +12,52 @@ import numpy as np
 import sys
 
 # Robot movement constants (scaling factors)
-DIST_SCALE = 0.015625         # Scaling factor for distance (1/64)
-ANGLE_SCALE = 1.45           # Scaling factor for angular movement
+DIST_SCALE = 0.015625  # Scaling factor for linear distance (1/64)
+ANGLE_SCALE = 1.45     # Scaling factor for angular velocity
 
 class Artist:
     """
-    A class that controls the movement of a robot (such as TurtleBot) by publishing velocity commands
-    to move it forward, rotate it, and calculate distances and angles. 
-    
-    
+    Represents a robot that listens for coordinate paths and executes them 
+    by rotating and moving forward accordingly.
     """
-    
+
     def __init__(self):
         '''
-            Initializes the Artist class, setting up the ROS node, publisher, and initial robot pose.
-
+        Initializes the Artist:
+        - Sets up ROS communication and robot control loop.
+        - Spawns two threads: one for receiving tasks, one for executing them.
         '''
         self.taskList = []
         self.taskMutex = Lock()
         self.dataAvailable = Condition(self.taskMutex)
-        
-        # Initialize the ROS node for the turtlebot_artist
+
+        # Initialize ROS node for controlling the robot
         rospy.init_node('turtlebot_artist', anonymous=True)
 
-        # Create a publisher to send velocity commands to the robot's navigation system
+        # Publisher for sending velocity commands
         self.velocity_publisher = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size=10)
 
-        # Set looping rate (10 Hz)
+        # Rate at which to loop (10 Hz)
         self.rate = rospy.Rate(10)
 
-        # Initialize the velocity message object to send command velocities
+        # Initialize velocity command message
         self.vel_msg = Twist()
 
-        # Set the robot's current position and initial angle
+        # Robot's initial position and orientation
         self.curr_pos = (0, 0)
         self.curr_angle = 0
-        
-        self.producer = Thread(target=self.receive_messages, args=())
-        self.producer.daemon = True  # Set the thread as a daemon
+
+        # Start background thread for receiving coordinate tasks
+        self.producer = Thread(target=self.receive_messages)
+        self.producer.daemon = True
         self.producer.start()
-        
-        self.consumer = Thread(target=self.execute_tasks, args=())
-        self.consumer.daemon = True  # Set the thread as a daemon
+
+        # Start background thread for executing coordinate tasks
+        self.consumer = Thread(target=self.execute_tasks)
+        self.consumer.daemon = True
         self.consumer.start()
-        
+
+        # Simple CLI to allow exit
         while True:
             user_input = raw_input("enter char to quit: ")
             try:
@@ -64,225 +65,182 @@ class Artist:
             except ValueError:
                 sys.exit()
                 break
-        
-        
-    
+
     def receive_messages(self):
         '''
-            receive_messages will be executed on another thread and 
-            continuously listens for tasks and pushes each task onto its taskList.
-            
+        Continuously listens for incoming tasks from the Planner.
+        Deserializes the received coordinate path and adds it to the task queue.
         '''
         PLANNER_IP = "10.5.13.238"
         PLANNER_PORT = 22
-        
-        
+
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-            
             s.connect((PLANNER_IP, PLANNER_PORT))
-            
+
             while True:
-                # print("Artist::Before Meta Data")
+                # Receive metadata first (includes shape, dtype, and message size)
                 metadata = s.recv(1024)
-                
                 if len(metadata) == 0:
                     continue
-                
+
                 metadata_str = metadata.decode('utf-8')
-        
-                # print("Artist::After Meta Data Str: ", metadata_str)
-                
                 if metadata_str is None:
                     break
-                
+
+                # Extract shape and data type info
                 shape_str, dtype_str, message_len, _ = metadata_str.split(';')
                 message_len = int(message_len)
-                
                 shape = tuple(map(int, shape_str[1:-1].split(',')))
                 dtype = np.dtype(dtype_str)
-                
-                # Receive the data
+
+                # Receive raw data based on expected length
                 data = b''
                 curr_message_size = 0
                 while curr_message_size < message_len:
                     chunk = s.recv(1024)
                     if not chunk:
-                        break  # Connection closed or no more data
+                        break
                     data += chunk
                     curr_message_size += len(chunk)
-                   
-                # Create numpy array from received data
-                task = np.frombuffer(data[:int(message_len)], dtype=dtype).reshape(shape)                
-                
+
+                # Convert received bytes into a numpy array
+                task = np.frombuffer(data[:message_len], dtype=dtype).reshape(shape)
+
+                # Add task to queue
                 with self.taskMutex:
                     self.taskList.append(task)
                     self.dataAvailable.notify()
+
         except Exception as e:
             print("Artist::Receive Message::Exception:: ", e)
             pass
         finally:
             s.close()
-    
+
     def execute_tasks(self):
         '''
-            execute_task will wait for tasks on the queue and execute
-            the closest task to its current position.
-            
+        Waits for available tasks and executes the one closest to the robot's current position.
+        Executes tasks by moving through each point in the path.
         '''
-        with self.taskMutex: 
-            while (len(self.taskList) == 0):
+        with self.taskMutex:
+            while len(self.taskList) == 0:
                 self.dataAvailable.wait()
-                
-            # find closest task to execute
+
+            # Find the task closest to current robot position
             closest_task = self.taskList[0]
             curr_dist = self.GetEuclidianDistance(closest_task[0, 0], self.curr_pos)
-            
+
             for idx, task in enumerate(self.taskList[1:]):
                 dist = self.GetEuclidianDistance(self.curr_pos, task[0, 0])
-                if dist < curr_dist: 
+                if dist < curr_dist:
                     closest_task = task
                     curr_dist = dist
-            
+
             self.taskList.remove(closest_task)
-            
-        # Move the robots in the order of the path for the task
+
+        # Follow the path in the selected task
         for next_coord in closest_task:
             self.Move(next_coord)
-        
+
+        # Recursively call to process next task
         self.execute_tasks()
-    
+
     def MoveForward(self, distance):
         """
-        Move the robot forward by a given distance.
+        Moves the robot forward by a given distance.
 
         Args:
-            distance (float): The distance to move forward in meters.
+            distance (float): Distance in meters.
         """
         rospy.loginfo("Info: Move Forward Started")
+        self.vel_msg.linear.x = 0.2  # Set forward speed
 
-        # Set linear velocity in the x-direction to move forward
-        self.vel_msg.linear.x = 0.2
-
-        # Record the start time
         t0 = rospy.Time.now().to_sec()
-
-        # Loop until the robot has moved the specified distance
-        while (rospy.Time.now().to_sec() - t0) < distance * DIST_SCALE:
-            # Publish the velocity message to move the robot
+        while rospy.Time.now().to_sec() - t0 < distance * DIST_SCALE:
             self.velocity_publisher.publish(self.vel_msg)
-
-            # Sleep to maintain the desired loop rate
             self.rate.sleep()
 
-        # Stop the robot after moving
         self.StopRobot()
-
         rospy.loginfo("Info: Move Forward Completed")
 
     def Rotate(self, angle_radian):
         """
-        Rotate the robot by a given angle in radians.
+        Rotates the robot by a given angle (in radians).
 
         Args:
-            angle_radian (float): The angle to rotate in radians. Positive values rotate counterclockwise.
+            angle_radian (float): Rotation angle in radians.
         """
-        # Normalize the angle to be within [-pi, pi]
+        # Normalize angle to [-π, π]
         if angle_radian > np.pi:
             angle_radian = -((2 * np.pi) - angle_radian)
-        elif angle_radian < (-1 * np.pi):
-            angle_radian = ((2 * np.pi) + angle_radian)
+        elif angle_radian < -np.pi:
+            angle_radian = (2 * np.pi) + angle_radian
 
         rospy.loginfo("Info: Rotation Started")
         rospy.loginfo("Info::Rotation::Curr Radian::%s", angle_radian)
 
-        # Set angular velocity to rotate the robot
         self.vel_msg.angular.z = angle_radian * ANGLE_SCALE
 
-        # Record the start time
         t0 = rospy.Time.now().to_sec()
-
-        # Loop for a fixed duration to rotate the robot
-        while (rospy.Time.now().to_sec() - t0) < 1:
-            # Publish the velocity message to rotate the robot
+        while rospy.Time.now().to_sec() - t0 < 1:
             self.velocity_publisher.publish(self.vel_msg)
-
-            # Sleep to maintain the desired loop rate
             self.rate.sleep()
 
-        # Stop the robot after rotation
         self.StopRobot()
-
         rospy.loginfo("Info: Rotation Completed")
 
     def StopRobot(self):
         """
-        Stop the robot by setting linear and angular velocities to zero.
+        Stops the robot's movement by setting both velocities to zero.
         """
-        # Set both linear and angular velocities to zero
         self.vel_msg.linear.x = 0.0
         self.vel_msg.angular.z = 0.0
-
-        # Publish the stop command
         self.velocity_publisher.publish(self.vel_msg)
-
-        # Sleep for 1 second to ensure the stop command is executed
         rospy.sleep(1)
 
     def GetEuclidianDistance(self, coords_init, coords_final):
         """
-        Calculate the Euclidean distance between two points.
+        Computes Euclidean distance between two points.
 
         Args:
-            coords_init (np.array): Initial coordinates (x, y).
-            coords_final (np.array): Final coordinates (x, y).
-        
+            coords_init (np.array): Starting point (x, y).
+            coords_final (np.array): Ending point (x, y).
+
         Returns:
-            float: The Euclidean distance between the initial and final coordinates.
+            float: Euclidean distance.
         """
-        # Use numpy's linear algebra norm function to calculate the Euclidean distance
-        distance = np.linalg.norm(coords_final - coords_init)
-        return distance
+        return np.linalg.norm(coords_final - coords_init)
 
     def GetRotationAngle(self, coords_init, coords_final):
         """
-        Calculate the angle required to rotate from the initial position to the final position.
+        Computes the angle the robot must rotate to face the destination.
 
         Args:
-            coords_init (np.array): Initial coordinates (x, y).
-            coords_final (np.array): Final coordinates (x, y).
-        
+            coords_init (np.array): Current position.
+            coords_final (np.array): Target position.
+
         Returns:
-            float: The angle (in radians) that the robot needs to rotate.
+            float: Rotation angle in radians.
         """
-        # Compute the difference between the final and initial coordinates
         diff = coords_final - coords_init
-
-        # Calculate the angle using arctan2, which gives the angle between the x-axis and the point (dx, dy)
         angle = np.arctan2(diff[0, 1], diff[0, 0])
-
-        # Return the difference between the desired rotation angle and the current robot orientation
         return angle - self.curr_angle
 
     def Move(self, coords_final):
         """
-        Move the robot to a specified final position by first rotating and then moving forward.
+        Rotates and moves the robot to the given target coordinates.
 
         Args:
-            coords_final (np.array): The target coordinates (x, y) to move to.
+            coords_final (np.array): Final destination (x, y).
         """
-        # Calculate the distance and rotation angle to the target coordinates
         distance = self.GetEuclidianDistance(self.curr_pos, coords_final)
         angle = self.GetRotationAngle(self.curr_pos, coords_final)
 
-        # Rotate the robot to the desired angle
         self.Rotate(angle)
-
-        # Move the robot forward by the calculated distance
         self.MoveForward(distance)
 
-        # Update the current position and orientation after movement
+        # Update internal robot state
         self.curr_pos = coords_final
         self.curr_angle += angle
 
